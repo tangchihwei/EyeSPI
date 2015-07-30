@@ -9,6 +9,11 @@ import picamera
 from time import sleep
 import glob, os
 import numpy as np
+import Rpi.GPIO as GPIO
+import time
+import requests
+import json
+import base64
 
 #Define Seat Position Constants
 
@@ -49,6 +54,36 @@ camera = picamera.PiCamera()
 cascPath = config.xml
 # Create the haar cascade
 faceCascade = cv2.CascadeClassifier(cascPath)
+
+# Initialize GPIO for motion sensor
+sensorPin = 4
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(sensorPin,GPIO.IN)
+
+# Firebase URL
+firebase_url = 'https://fordeyespi.firebaseio.com'
+
+#Control loop
+
+while 1:
+    # Motion detect event triggered by the motion sensor
+    if GPIO.input(sensorPin):
+        print "Motion detected"
+        # Capture the image
+        camera.capture('image.jpg')
+        image = image.jpg
+        # Encode image as base64 string
+        with open(image, "rb") as imageFile:
+            image64str = base64.b64encode(imageFile.read())
+        # Push image to firebase
+        payload = {'picID':image64str}
+        result = requests.post(firebase_url + '/EyeSPI' + '/picture.json', data = json.dumps(payload))
+        # Push message to firebase
+        firebaseID = result.json()['name']
+        payload = {'id':0, 'picID':firebaseID, 'FL':0, 'FR':0, 'RL':0, 'RC':0, 'RR':0, 'used':0}
+        result = requests.post(firebase_url+'/EyeSPI'+'/message.json', data = json.dumps(payload))
+    else:
+        #Scan firebase for file
 
 #taking an image
 #camera.capture('image.jpg')<--------------------Function 1, Nitin
