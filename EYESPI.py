@@ -103,10 +103,30 @@ def faceDetectSequence():#<----------------------Function 2, Nitin
         loop_ind+=1
             
     FL = np.mean(FL_detect)
+    if FL >= 0.5:
+        FL = 1
+    else
+        FL = 0
     FR = np.mean(FR_detect)
+    if FR >= 0.5:
+        FR = 1
+    else
+        FR = 0
     RL = np.mean(RL_detect)
+    if RL >= 0.5:
+        RL = 1
+    else
+        RL = 0
     RM = np.mean(RM_detect)
+    if RM >= 0.5:
+        RM = 1
+    else
+        RM = 0
     RR = np.mean(RR_detect)
+    if RR >= 0.5:
+        RR = 1
+    else
+        RR = 0
 
     return (FL,FR,RL,RM,RR)
 
