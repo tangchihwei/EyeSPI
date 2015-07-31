@@ -62,6 +62,8 @@ GPIO.setup(sensorPin,GPIO.IN)
 
 # Firebase URL
 firebase_url = 'https://fordeyespi.firebaseio.com'
+message_url = firebase_url+'/EyeSPI'+'/message.json'
+picture_url = firebase_url + '/EyeSPI' + '/picture.json'
 
 #Control loop
 
@@ -69,24 +71,40 @@ while 1:
     # Motion detect event triggered by the motion sensor
     if GPIO.input(sensorPin):
         print "Motion detected"
-        # Capture the image
-        camera.capture('image.jpg')
+        captureImage()
+    else:
+        #Scan firebase for file
+        result = requests.get(message_url, data = json.dumps(payload))
+        if result:
+            # Parse the file
+            response = result.json()
+            key = ''.join(response.keys())
+            fileID = response[key]['id']
+            # Delete the file
+            requests.delete(firebase_url + '/EyeSPI' + '/message' + key + '.json')
+            if fileID = 2:
+                captureImage()
+            elif fileID = 3:
+                #faceDetectSequence()
+    sleep(5)
+
+# Capture an image and push it to firebase
+def captureImage():
+    # Capture the image
+    camera.capture('image.jpg')
         image = image.jpg
         # Encode image as base64 string
         with open(image, "rb") as imageFile:
             image64str = base64.b64encode(imageFile.read())
-        # Push image to firebase
-        payload = {'picID':image64str}
-        result = requests.post(firebase_url + '/EyeSPI' + '/picture.json', data = json.dumps(payload))
+    # Push image to firebase
+    payload = {'picID':image64str}
+        result = requests.post(picture_url, data = json.dumps(payload))
         # Push message to firebase
         firebaseID = result.json()['name']
-        payload = {'id':0, 'picID':firebaseID, 'FL':0, 'FR':0, 'RL':0, 'RC':0, 'RR':0, 'used':0}
-        result = requests.post(firebase_url+'/EyeSPI'+'/message.json', data = json.dumps(payload))
-    else:
-        #Scan firebase for file
+        payload = {'id':1, 'picID':firebaseID, 'FL':0, 'FR':0, 'RL':0, 'RC':0, 'RR':0, 'used':0}
+        result = requests.post(message_url, data = json.dumps(payload))
 
-#taking an image
-#camera.capture('image.jpg')<--------------------Function 1, Nitin
+    return
 
 #face detection
 def faceDetectSequence():#<----------------------Function 2, Nitin
