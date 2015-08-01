@@ -3,15 +3,21 @@
 #still need to run apt-get install python-picamera or apt-get install python3-picamera
 #still need to run apt-get install python-numpy
 
+import os
 import cv2
 import sys
-import picamera
+
 from time import sleep
-import glob, os
+import glob
 import numpy as np
+import RPi.GPIO as GPIO
+import time
+import requests
+import json
+import base64
 
 #Define Seat Position Constants
-
+'''
 #Front Left
 FL_BLP_x =  #Bottom left point (x,y)
 FL_BLP_y =  #Bottom left point
@@ -41,18 +47,44 @@ RR_BLP_x =  #Bottom left point
 RR_BLP_y =  #Bottom left point
 RR_TRP_x =  #Top right point
 RR_TRP_y =  #Top right point
-
-#intilize camera
-camera = picamera.PiCamera()
+'''
 
 #set haar cascade file
-cascPath = config.xml
+#cascPath = config.xml
 # Create the haar cascade
-faceCascade = cv2.CascadeClassifier(cascPath)
+#faceCascade = cv2.CascadeClassifier(cascPath)
 
-#taking an image
-#camera.capture('image.jpg')<--------------------Function 1, Nitin
+# Initialize GPIO for motion sensor
+sensorPin = 4
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(sensorPin,GPIO.IN)
 
+# Firebase URL
+firebase_url = 'https://fordeyespi.firebaseio.com'
+message_url = firebase_url+'/EyeSPI'+'/message.json'
+picture_url = firebase_url + '/EyeSPI' + '/picture.json'
+    
+# Capture an image and push it to firebase
+def captureImage():
+    # Capture the image
+	os.system('fswebcam image.jpg')
+	image = 'image.jpg'
+        # Encode image as base64 string
+	with open(image, "rb") as imageFile:
+            image64str = base64.b64encode(imageFile.read())
+    # Push image to firebase
+	payload = {'picID':image64str}
+	result = requests.post(picture_url, data = json.dumps(payload))
+	print "pic post status"
+	print result.status_code
+        # Push message to firebase
+	firebaseID = result.json()['name']
+	payload = {'id':1, 'picID':firebaseID, 'FL':0, 'FR':0, 'RL':0, 'RC':0, 'RR':0, 'used':0}
+	result = requests.post(message_url, data = json.dumps(payload))
+	print "message post status"
+	print result.status_code
+	return
+'''
 #face detection
 def faceDetectSequence():#<----------------------Function 2, Nitin
     for shot in range(0,6,1):
@@ -129,10 +161,31 @@ def faceDetectSequence():#<----------------------Function 2, Nitin
         RR = 0
 
     return (FL,FR,RL,RM,RR)
+'''
+#CONTROL
 
+while 1:
+        sleep(5)
+    # Motion detect event triggered by the motion sensor
+        if GPIO.input(sensorPin):
+                print "Motion detected"
+                captureImage()
+        else:
+        #Scan firebase for file
+                result = requests.get(message_url)
+                
+		if len(result.text) > 15:
+            # Parse the file
+                        response = result.json()
+                        key = ''.join(response.keys())
+                        fileID = response[key]['id']
+            # Delete the file
 
-
-
-
-
-
+                        result = requests.delete(firebase_url + '/EyeSPI' + '/message'+'/' + key + '.json')
+			print key
+			#print "deleted message"
+                        if fileID is 2:
+				print "fileID is 2"
+                                captureImage()
+                        elif fileID is 3:
+				print "fileID is 3"
