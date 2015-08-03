@@ -1,5 +1,3 @@
-#THIS HAS NOT BEEN TESTED
-
 #still need to run apt-get install python-picamera or apt-get install python3-picamera
 #still need to run apt-get install python-numpy
 
@@ -58,6 +56,16 @@ RR_TRP_y =  #Top right point
 sensorPin = 4
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(sensorPin,GPIO.IN)
+State_MotionDetect False
+State_FacialDetect False
+counter = 0
+
+controllerId = 0
+userAppId = 1
+rpiReqId = 2
+faceDetId = 3
+motionDetId = 4
+
 
 # Firebase URL
 firebase_url = 'https://fordeyespi.firebaseio.com'
@@ -79,33 +87,33 @@ def captureImage():
 	print result.status_code
         # Push message to firebase
 	firebaseID = result.json()['name']
-	payload = {'id':1, 'picID':firebaseID, 'FL':0, 'FR':0, 'RL':0, 'RC':0, 'RR':0, 'used':0}
+	payload = {'id':userAppId, 'picID':firebaseID, 'FL':0, 'FR':0, 'RL':0, 'RC':0, 'RR':0, 'used':0}
 	result = requests.post(message_url, data = json.dumps(payload))
 	print "message post status"
 	print result.status_code
 	return
-'''
+
 #face detection
 def faceDetectSequence():#<----------------------Function 2, Nitin
     for shot in range(0,6,1):
-        sleep(5)
+        #sleep(5)
         camera.capture("file"+str(shot)+".jpg")``````#concatenate names
     #access taken pictures
     os.chdir("/mydir")
 
-    FL_detect=[0,0,0,0,0,0]
-    FR_detect=[0,0,0,0,0,0]
-    RL_detect=[0,0,0,0,0,0]
-    RM_detect=[0,0,0,0,0,0]
-    RR_detect=[0,0,0,0,0,0]
-    loop_ind=0
-    for file in glob.glob("*.jpg"):
+    FL=0
+    FR=0
+    RL=0
+    RC=0
+    RR=0
+    
+   # loop_ind=0
         
         # Read the image
-        gray = cv2.cvtColor(file, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(file, cv2.COLOR_BGR2GRAY)
 
         # Detect faces in the image
-        faces = faceCascade.detectMultiScale(
+    faces = faceCascade.detectMultiScale(
                                              gray,
                                              scaleFactor=1.1,
                                              minNeighbors=5,
@@ -114,58 +122,105 @@ def faceDetectSequence():#<----------------------Function 2, Nitin
                                              )
         
         #set seat pos to true for each captured image if face within bounds
-        for (x, y, w, h) in faces:
+    for (x, y, w, h) in faces:
             #check if faces in seat region
             #Front Left
-            if (FL_BLP_x < (x+w/2) && FL_TRP_x > (x+w/2) && FL_BLP_y < (y+h/2) && FL_TRP_y > (y+h/2)):
-                FL_detect[loop_ind]=1
+        if (FL_BLP_x < (x+w/2) && FL_TRP_x > (x+w/2) && FL_BLP_y < (y+h/2) && FL_TRP_y > (y+h/2)):
+                FL=1
             #Front Right
-            elif (FR_BLP_x < (x+w/2) && FR_TRP_x > (x+w/2) && FR_BLP_y < (y+h/2) && FR_TRP._ > (y+h/2)):
-                FR_detect[loop_ind]=1
+        elif (FR_BLP_x < (x+w/2) && FR_TRP_x > (x+w/2) && FR_BLP_y < (y+h/2) && FR_TRP._ > (y+h/2)):
+                FR=1
             #Rear Left
-            elif (RL_BLP_x < (x+w/2) && RL_TRP_x > (x+w/2) && RL_BLP_y < (y+h/2) && RL_TRP_y > (y+h/2)):
-                RL_detect[loop_ind]=1
+        elif (RL_BLP_x < (x+w/2) && RL_TRP_x > (x+w/2) && RL_BLP_y < (y+h/2) && RL_TRP_y > (y+h/2)):
+                RL=1
             #Rear Middle
-            elif (RM_BLP_x < (x+w/2) && RM_TRP_x > (x+w/2) && RM_BLP_y < (y+h/2) && RM_TRP_y > (y+h/2)):
-                RM_detect[loop_ind]=1
+        elif (RC_BLP_x < (x+w/2) && RC_TRP_x > (x+w/2) && RC_BLP_y < (y+h/2) && RM_TRP_y > (y+h/2)):
+                RC=1
             #Rear Right
-            elif (RR_BLP_x < (x+w/2) && RR_TRP_x > (x+w/2) && RR_BLP_y < (y+h/2) && RR_TRP_y > (y+h/2)):
-                RR_detect[loop_ind]=1
+        elif (RR_BLP_x < (x+w/2) && RR_TRP_x > (x+w/2) && RR_BLP_y < (y+h/2) && RR_TRP_y > (y+h/2)):
+                RR=1
 
-        loop_ind+=1
+        # loop_ind+=1
             
-    FL = np.mean(FL_detect)
-    if FL >= 0.5:
-        FL = 1
-    else
-        FL = 0
-    FR = np.mean(FR_detect)
-    if FR >= 0.5:
-        FR = 1
-    else
-        FR = 0
-    RL = np.mean(RL_detect)
-    if RL >= 0.5:
-        RL = 1
-    else
-        RL = 0
-    RM = np.mean(RM_detect)
-    if RM >= 0.5:
-        RM = 1
-    else
-        RM = 0
-    RR = np.mean(RR_detect)
-    if RR >= 0.5:
-        RR = 1
-    else
-        RR = 0
+    # FL = np.mean(FL_detect)
+#     if FL >= 0.5:
+#         FL = 1
+#     else
+#         FL = 0
+#     FR = np.mean(FR_detect)
+#     if FR >= 0.5:
+#         FR = 1
+#     else
+#         FR = 0
+#     RL = np.mean(RL_detect)
+#     if RL >= 0.5:
+#         RL = 1
+#     else
+#         RL = 0
+#     RC = np.mean(RC_detect)
+#     if RC >= 0.5:
+#         RC = 1
+#     else
+#         RC = 0
+#     RR = np.mean(RR_detect)
+#     if RR >= 0.5:
+#         RR = 1
+#     else
+#         RR = 0
 
-    return (FL,FR,RL,RM,RR)
-'''
+    return (FL,FR,RL,RC,RR)
+
 #CONTROL
 
 while 1:
-        sleep(5)
+    #execute every 5 seconds
+    sleep(5)
+    
+	result = requests.get(message_url)
+	resultStr = result.text
+	if resultStr == "null":
+		print "no message"
+    else:
+        response = result.json()
+        key = ''.join(response.keys())
+        fileId = response[key]['id']
+        result = requests.delete(firebase_url + '/EyeSPI' + '/message'+'/' + key + '.json')
+        
+        if fileId is rpiReqId:
+            #pi take a picture and send back.
+        elif fileId is faceDetId:
+            #start facial detection
+            State_FacialDetect = True
+            State_MotionDetect = False
+        elif fileId is motionDetId:
+            #start motion detection
+            State_FacialDetect = False
+            State_MotionDetect = True
+        else: 
+            print "Error: Unexpected Id"
+            
+    #main control 
+    if State_FacialDetect is True:
+        if counter is 0:
+        #function to trigger facial detect
+            faceDetResult = faceDetectSequence()
+            payload = {'id':controllerId, 'picID':0, 'FL':faceDetResult[0], 'FR':faceDetResult[1], 'RL':faceDetResult[2], 'RC':faceDetResult[3], 'RR':faceDetResult[4], 'used':0} 
+        	result = requests.post(message_url, data = json.dumps(payload))
+            #Next execution: ~60 seconds
+            counter = 12
+    elif State_MotionDetect is True:
+        if counter is 0:
+            #check Motion sensor input pin
+            if GPIO_input(sensorPin):
+                print "Motion Detected"
+                captureimage()
+                #Next execution: ~60 seconds
+                counter = 12
+    #decrement counter            
+    if counter is not 0:
+        counter = counter - 1
+            
+'''
     # Motion detect event triggered by the motion sensor
         if GPIO.input(sensorPin):
                 print "Motion detected"
@@ -189,3 +244,4 @@ while 1:
                                 captureImage()
                         elif fileID is 3:
 				print "fileID is 3"
+'''
